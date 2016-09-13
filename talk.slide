@@ -1,0 +1,132 @@
+Hello, Gophers
+Philly GoMeetup
+13 Sep 2016
+
+Jon Wear
+DramaFever.com
+@genghisjahn
+
+
+* Solving Triangle Peg Solitaire With Go
+
+.image images/boardfull.jpg
+
+* Lots of traveling this summer
+
+Found myself eating a Cracker Barrel a lot.
+
+My six year old and I would always play with the triangle peg board game
+
+* It's really called Peg Solitaire
+
+* While flying to Texas I started thinking...
+
+.image images/flyinggopher.png
+
+What if I wrote a Go program to solve it for me, no matter the starting position?
+
+* What do I need to define?
+
+A board
+A hole
+A peg?
+
+Some way to move a peg from one hole to another.
+Some way to determine the game state (win, lose, in progress...)
+
+* First, the Board!
+
+It's a triangle, the top row has 1 hole, the bottom row has 5.
+
+And we build it like this:
+
+.link https://github.com/genghisjahn/tripeg/blob/master/types.go#L168
+
+.code code/board.go
+
+.link https://play.golang.org/p/3YxZA1x2ga
+
+* More Board stuff...
+
+The coordinates
+
+.code code/coord.txt
+
+I didn't find anyone else who did it this way, but it worked for me.
+
+* The Hole
+
+.code code/hole.go
+
+We don't need a peg struct, peg is just a property on the hole type.
+
+* To win the game you gotta JuMp! JUMP!
+
+This code is ripe for a visit from Refaco, The Refactoring Robot from Refactotron!
+
+But this is how you jump...
+
+Notice the use of values receivers and not pointer receivers...
+
+.link https://github.com/genghisjahn/tripeg/blob/master/types.go#L49
+
+* Okay, let's solve
+
+How do we do that?
+
+- Go through the entire coordinate space: 1,1 - 5,9.
+- Some of those coordinates won't contain holes.
+- If the coordinate has a hole (See the GetHole function)
+- Can it make a legal move in any direction (up left, up right, left, right, down left, down right)
+- If it can, add that potential legal move to the available moves slice.
+- Once we've check all holes for legal moves, get how many legal moves are possible
+- Randomly pick one.
+
+_Return_a_new_board_that_reflects_the_move_
+
+* Key learning point for me in this project...
+
+When writing software that emulates a game that contains something like changing board state, have the Move/Jump/Turn mechanism return a new instance of the board, so that all instances of the board/game type are immutable.
+
+I didn't do this in the beginning, so when I tested out all possible peg moves, I was actually changing the state of the board because I was using _pointer_ receivers.
+
+* You said you were going to solve this...
+
+Right okay,
+
+Here's the thing, I don't actually solve the game in any meaningful machine learning type way.
+
+The program simply tries random legal moves until there is only one peg left on the board, and then it prints out the solution.
+
+Most of the time it will come to a state where there is more than one peg left on the board, but no legal moves remain.  The software abandons that state and moves on to the next one.
+
+.link https://github.com/genghisjahn/tripeg/blob/anysizetriangle/types.go#L231-L346 Solve Method
+
+* This can be done for more than just a 5 row triangle
+
+.link https://gist.github.com/genghisjahn/3dd1de1951fd955d5dfbd57e5a14c359 5 rows
+.link https://gist.github.com/genghisjahn/41f74e1d50796dedaac4db0c9030098e 6 rows
+.link https://gist.github.com/genghisjahn/b662ffb479efe8199640d5611ae697dd 7 rows
+.link https://gist.github.com/genghisjahn/6305d886454ffa87ed8efbf0a6ee949b 8 rows
+
+* 9 rows or more?
+
+I think it returned a 10 row solution once, but I didn't save it.
+I've never seen a 9 row solution.
+
+Just randomly trying moves isn't going to work with this many pegs/holes.
+
+* Basic learning...
+
+If a potential move would put the board in a state that would leave no legal moves (and not win the game), then that current board state is added to a map.
+On future move evaluations, if a legal move would put the board in a state that is already in the No Good map, then it's not considered.
+
+.link https://github.com/genghisjahn/tripeg/blob/master/types.go#L330-L344
+
+* There's a lot more to this game...
+
+.image images/boardempty.png
+
+For example...
+
+.link https://en.wikipedia.org/wiki/Peg_solitaire#Studies_on_peg_solitaire Peg Solitaire
